@@ -1,0 +1,163 @@
+import cv2
+import sys
+import pandas as pd
+import pdb
+import os
+import math
+
+#Parsing methods
+if( len(sys.argv) != 4):
+    print("USAGE:\n\t python3 comparision.py <video path> <tracking methods> <obj name>\n")
+    print("USAGE: \n\t 'BOOSTING', 'MIL','KCF', 'TLD', 'MEDIANFLOW', 'GOTURN', 'MOSSE', 'CSRT'")
+    print("OUTPUT:\n\t <video name><obj name>.csv\n")
+    print("NOTE:\n\t Do not use spaces and double underscores in object name\n")
+    sys.exit(1)
+
+
+#(major_ver, minor_ver, subminor_ver) = (cv2.__version__).split('.')￼
+(major_ver, minor_ver) = cv2.__version__.split(".")[:2]
+
+#mouth and face classifier
+#face_cascade = cv2.CascadeClassifier('./xml/haarcascade_frontalface_default.xml')
+#mouth_cascade = cv2.CascadeClassifier('./xml/haarcascade_mcs_mouth.xml')
+
+
+if __name__ == '__main__' :
+
+    # Set up tracker.
+    # Instead of MIL, you can also use
+    tracker_types = ['BOOSTING', 'MIL','KCF', 'TLD', 'MEDIANFLOW', 'GOTURN', 'MOSSE', 'CSRT']
+    tracker_type = sys.argv[2]
+
+
+    #if int(minor_ver) < 3:
+    #    tracker = cv2.Tracker_create(tracker_type)
+    #else:
+    if tracker_type == 'BOOSTING':
+        tracker = cv2.TrackerBoosting_create()
+    if tracker_type == 'MIL':
+        tracker = cv2.TrackerMIL_create()
+    if tracker_type == 'KCF':
+        tracker = cv2.TrackerKCF_create()
+    if tracker_type == 'TLD':
+        tracker = cv2.TrackerTLD_create()
+    if tracker_type == 'MEDIANFLOW':
+        tracker = cv2.TrackerMedianFlow_create()
+    if tracker_type == 'GOTURN':
+        tracker = cv2.TrackerGOTURN_create()
+    if tracker_type == 'MOSSE':
+        tracker = cv2.TrackerMOSSE_create()
+    if tracker_type == "CSRT":
+        tracker = cv2.TrackerCSRT_create()
+
+
+    # Read video
+    video = cv2.VideoCapture(sys.argv[1])
+
+    # Exit if video not opened.
+    if not video.isOpened():
+        print ("Could not open video")
+        sys.exit()
+
+    # Read first frame.
+    ok, frame = video.read()
+    if not ok:
+        print ('Cannot read video file')
+        sys.exit()
+
+    # Calculating frames to skip
+    fps = round(video.get(cv2.CAP_PROP_FPS))
+    #skip_sec = 1/120
+    fr_to_sk = fps
+
+    # Define an initial bounding box
+    bbox = (287, 23, 86, 320)
+
+    # Uncomment the line below to select a different bounding box
+    bbox = cv2.selectROI(frame, False)
+
+    # Initialize tracker with first frame and bounding box
+    ok = tracker.init(frame, bbox)
+
+    bbox_list=[]
+    poc=0
+    while True:
+        # Read a new frame
+        ok, frame = video.read()
+        if not ok:
+            break
+
+        # Start timer
+        timer = cv2.getTickCount()
+
+        # Update tracker
+        ok, bbox = tracker.update(frame)
+
+        # Calculate Frames per second (FPS)
+        fps = cv2.getTickFrequency() / (cv2.getTickCount() - timer);
+
+        # Draw bounding box
+        if ok:
+            # Tracking success
+            bbox=list(bbox)
+            p1 = (int(bbox[0]), int(bbox[1]))
+            p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
+            cv2.rectangle(frame, p1, p2, (255,0,0), 2, 1)
+            bbox = [poc] + bbox
+            bbox_list = bbox_list + [bbox]
+
+            #crop image
+            x_c= int(bbox[1])
+            y_c=int(bbox[2])
+            w_c=int(bbox[3])
+            h_c=int(bbox[4])
+            img=frame
+            crop_img = img[y_c:y_c+h_c, x_c:x_c+w_c]
+            gray = cv2.cvtColor(crop_img, cv2.COLOR_BGR2GRAY)
+
+
+                #mouth = mouth_cascade.detectMultiScale(gray, 1.7, 11)
+
+                #for (mx, my, mw, mh) in mouth:
+                #    cv2.rectangle(img, (mx, my), (mx + mw, my + mh), (0, 0, 0), 2)
+
+            cv2.namedWindow('image', cv2.WINDOW_NORMAL)
+            #cv2.imshow('image',img)
+            cv2.destroyAllWindows()
+
+            poc  = poc + fr_to_sk
+            video.set(cv2.CAP_PROP_POS_FRAMES,poc)
+            fr_suc, fr = video.read()
+
+        else :
+            # Tracking failure
+            cv2.putText(frame, "Tracking failure detected", (100,80), cv2.FONT_HERSHEY_SIMPLEX, 0.75,(0,0,255),2)
+            bbox = list((-1,-1,-1,-1))
+            bbox = [poc] + bbox
+            bbox_list = bbox_list + [bbox]
+            poc  = poc + fr_to_sk
+            video.set(cv2.CAP_PROP_POS_FRAMES,poc)
+            fr_suc, fr = video.read()
+
+        # Display tracker type on frame
+        cv2.putText(frame, tracker_type + " Tracker", (100,20), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (50,170,50),2);
+
+        # Display FPS on frame
+        cv2.putText(frame, "FPS : " + str(int(fps)), (100,50), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (50,170,50), 2);
+
+        # Display result
+        #cv2.imshow("Tracking", frame)
+
+        # Exit if ESC pressed
+        k = cv2.waitKey(1) & 0xff
+        if k == 27 : break
+
+# Create a dataframe out of list and save it
+bbox_df = pd.DataFrame(bbox_list,
+                       columns=['poc','x','y','w','h'])
+
+# Saving ground truth as csv file.
+base_name = os.path.basename(sys.argv[1])
+vid_name  = os.path.splitext(base_name)[0] + "__" + sys.argv[2] + "__" + sys.argv[3] + ".csv"
+print(vid_name)
+bbox_df.to_csv(vid_name,index=False)
