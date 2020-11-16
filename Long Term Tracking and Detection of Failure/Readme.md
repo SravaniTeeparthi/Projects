@@ -21,4 +21,4 @@
     python classify.py 
   ```
    
-   [Results are reported in the papaer] (https://github.com/SravaniTeeparthi29/Projects/blob/main/Long%20Term%20Tracking%20and%20Detection%20of%20Failure/final_paper_tracking.pdf) 
+   [Results are reported in the paper] (https://github.com/SravaniTeeparthi29/Projects/blob/main/Long%20Term%20Tracking%20and%20Detection%20of%20Failure/final_paper_tracking.pdf) 
