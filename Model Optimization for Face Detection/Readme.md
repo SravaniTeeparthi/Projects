@@ -3,5 +3,5 @@
 ### Steps
   1. Generate ground truth on images
   2. Use Image ground truth to generate groudn truth for boxes.
-  3. Optimized model performance estimation
+  3. Optimized model performance estimation.
   4. Optimize the final model and obtain results from the final classifier
