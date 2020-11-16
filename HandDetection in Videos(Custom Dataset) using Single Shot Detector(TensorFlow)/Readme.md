@@ -74,11 +74,12 @@ The following script splits the csv file into training, validation and testing r
 
 ## Training
  Change num of steps accordingly, change paths in config file
- 
+
+	cd training
 	time python model_main.py --model_dir=training\
 	--num_train_steps=50000\
-	--pipeline_config_path=/home/sravani/Softwares/tensorflow-handdetection/handtracking/model-	checkpoint/ssdmobilenetv1/ssd_mobilenet_v1_coco.config 
-![](image-kgsjkc79.png)
+	--pipeline_config_path=/home/sravani/Softwares/tensorflow-handdetection/handtracking/model-checkpoint/ssdmobilenetv1/ssd_mobilenet_v1_coco.config 
+
 
 ## Exporting Model
 Once training is done, the model can be exported using
