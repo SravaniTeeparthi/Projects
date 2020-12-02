@@ -7,3 +7,7 @@
   
   The winning architecture is picked from 21 random runs.
   * For object detection, Faster RCNN is re-trained on custom dataset. 
+  
+  The results are docuemnted at 
+https://github.com/SravaniTeeparthi29/Projects/blob/main/Object%20Detection%20and%20Activity%20Recognition/final_paper.pdf 
+
